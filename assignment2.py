@@ -41,14 +41,14 @@ class Assignment2(object):
             A two dimensional array that contains the average empirical error
             and the average true error for each m in the range accordingly.
         """
-        x_axis = np.arange(m_first, m_last + step, step) # TODO: + step?
+        x_axis = np.arange(m_first, m_last + step, step)
         empirical_errors, true_errors = [], []
-        for n in range(m_first, m_last + 1, step):
+        for n in range(m_first, m_last + step, step):
             empirical_avg, true_avg = 0, 0
             for i in range(T):
                 sample = self.sample_from_D(n)
                 intervals, besterror = intv.find_best_interval(sample[:, 0], sample[:, 1], k)
-                empirical_avg += besterror / (n * T) # self.compute_empirical_error(sample, intervals, k)
+                empirical_avg += besterror / (n * T)
                 true_avg += self.compute_true_error(intervals) / T
             empirical_errors.append(empirical_avg)
             true_errors.append(true_avg)
@@ -67,8 +67,22 @@ class Assignment2(object):
 
         Returns: The best k value (an integer) according to the ERM algorithm.
         """
-        # TODO: Implement the loop
-        pass
+        x_axis = np.arange(k_first, k_last + step, step)
+        sample = self.sample_from_D(m)
+        empirical_errors, true_errors = [], []
+        min_empirical_error, best_k = 2, -1
+        for k in range(k_first, k_last + step, step):
+            intervals, besterror = intv.find_best_interval(sample[:, 0], sample[:, 1], k)
+            empirical_error = besterror / m
+            if empirical_error < min_empirical_error:
+                min_empirical_error = empirical_error
+                best_k = k
+            empirical_errors.append(empirical_error)
+            true_errors.append(self.compute_true_error(intervals))
+        [empirical, true] = [np.array(empirical_errors), np.array(true_errors)]
+        title = "Average Error as a Function of k"
+        self.graph(title, x_axis, [empirical, true], "k", ["Empirical Error", "True Error"])
+        return best_k
 
 
     def cross_validation(self, m):
