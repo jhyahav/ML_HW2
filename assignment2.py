@@ -1,5 +1,5 @@
 #################################
-# Your name:
+# Your name: Jonathan Yahav
 #################################
 
 import numpy as np
@@ -20,8 +20,10 @@ class Assignment2(object):
         Returns: np.ndarray of shape (m,2) :
                 A two dimensional array of size m that contains the pairs where drawn from the distribution P.
         """
-        # TODO: Implement me
-        pass
+        rng = np.random.default_rng()
+        x_values = rng.uniform(0.0, 1.0, m)
+        y_values = np.array([generate_label(x) for x in x_values])
+        return np.vstack((x_values, y_values))
 
 
     def experiment_m_range_erm(self, m_first, m_last, step, k, T):
@@ -64,11 +66,22 @@ class Assignment2(object):
         # TODO: Implement me
         pass
 
-    #################################
-    # Place for additional methods
+#################################
+# Place for additional methods
 
 
-    #################################
+def generate_label(x):
+    rng = np.random.default_rng()
+    random = rng.uniform(0.0, 1.0) # use a random number for probabilistic mapping
+    return int(random <= 0.8) if is_in_positive_interval(x) else int(random <= 0.1)
+
+
+def is_in_positive_interval(x):
+    positive_intervals = [0 <= x <= 0.2, 0.4 <= x <= 0.6, 0.8 <= x <= 1]
+    return any(positive_intervals)
+
+
+#################################
 
 
 if __name__ == '__main__':
