@@ -22,6 +22,7 @@ class Assignment2(object):
         """
         rng = np.random.default_rng()
         x_values = rng.uniform(0.0, 1.0, m)
+        x_values.sort()
         y_values = np.array([self.generate_label(x) for x in x_values])
         return np.column_stack((x_values, y_values))
 
@@ -41,16 +42,20 @@ class Assignment2(object):
             and the average true error for each m in the range accordingly.
         """
         x_axis = np.arange(m_first, m_last + step, step) # TODO: + step?
-        empirical_errors, true_errors = np.array([]), np.array([])
+        empirical_errors, true_errors = [], []
         for n in range(m_first, m_last + 1, step):
             empirical_avg, true_avg = 0, 0
             for i in range(T):
                 sample = self.sample_from_D(n)
                 intervals, besterror = intv.find_best_interval(sample[:, 0], sample[:, 1], k)
-                empirical_avg += self.compute_empirical_error(sample, intervals, besterror, k)
+                empirical_avg += besterror / (n * T) # self.compute_empirical_error(sample, intervals, k)
                 true_avg += self.compute_true_error(intervals) / T
-            numpy.append(empirical_errors, empirical_avg)
-            numpy.append(true_errors, true_avg)
+            empirical_errors.append(empirical_avg)
+            true_errors.append(true_avg)
+        title = "Average Error as a Function of n"
+        [empirical, true] = [np.array(empirical_errors), np.array(true_errors)]
+        self.graph(title, x_axis, [empirical, true], "n", ["Empirical Error", "True Error"])
+        return np.column_stack((empirical, true))
 
     def experiment_k_range_erm(self, m, k_first, k_last, step):
         """Finds the best hypothesis for k= 1,2,...,10.
@@ -78,24 +83,17 @@ class Assignment2(object):
     #################################
     # Place for additional methods
 
+    positive_intervals = [(0, 0.2), (0.4, 0.6), (0.8, 1)]
+    negative_intervals = [(0.2, 0.4), (0.6, 0.8)]
+
     def generate_label(self, x):
         rng = np.random.default_rng()
         random = rng.uniform(0.0, 1.0) # use a random number for probabilistic mapping
         return int(random <= 0.8) if self.is_in_positive_interval(x) else int(random <= 0.1)
 
-    @staticmethod
-    def is_in_positive_interval(x):
-        positive_intervals = [0 <= x <= 0.2, 0.4 <= x <= 0.6, 0.8 <= x <= 1]
-        return any(positive_intervals)
-
-    def compute_empirical_error(self, sample, intervals, besterror, k):
-        pass
-
     def compute_true_error(self, interval_list):
-        positive_intervals = [[0, 0.2], [0.4, 0.6], [0.8, 1]]
-        negative_intervals = [[0.2, 0.4], [0.6, 0.8]]
-        positive_overlap = self.compute_overlap_length(interval_list, positive_intervals)
-        negative_overlap = self.compute_overlap_length(interval_list, negative_intervals)
+        positive_overlap = self.compute_overlap_length(interval_list, self.positive_intervals)
+        negative_overlap = self.compute_overlap_length(interval_list, self.negative_intervals)
         positive_no_overlap, negative_no_overlap = 0.6 - positive_overlap, 0.4 - negative_overlap
         return 0.2 * positive_overlap + 0.1 * negative_no_overlap + 0.8 * positive_no_overlap + 0.9 * negative_overlap
 
@@ -111,12 +109,24 @@ class Assignment2(object):
             j += right1 >= right2
         return overlap_length
 
+    def is_in_positive_interval(self, x):
+        return self.is_in_interval(x, self.positive_intervals)
+
     @staticmethod
-    def graph(xData, yData, xLabel): # FIXME: adjust to relevant data
+    def is_in_interval(x, interval_lst):
+        for interval in interval_lst:
+            if interval[0] <= x <= interval[1]:
+                return True
+        return False
+
+    @staticmethod
+    def graph(title, xData, yData, xLabel, yLabels):
         plt.xlabel(xLabel)
-        plt.ylabel("Prediction Accuracy (%)")
-        plt.title("Prediction Accuracy (%) as a Function of " + xLabel)
-        plt.plot(xData, yData, color="red")
+        colors = ["red", "black"]
+        for i in range(len(yData)):
+            plt.plot(xData, yData[i], label=yLabels[i], color=colors[i])
+        plt.legend()
+        plt.title(title)
         plt.show()
 
     #################################
