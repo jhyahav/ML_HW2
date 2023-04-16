@@ -80,6 +80,25 @@ def is_in_positive_interval(x):
     positive_intervals = [0 <= x <= 0.2, 0.4 <= x <= 0.6, 0.8 <= x <= 1]
     return any(positive_intervals)
 
+def compute_true_error(interval_list):
+    positive_intervals = [[0, 0.2], [0.4, 0.6], [0.8, 1]]
+    negative_intervals = [[0.2, 0.4], [0.6, 0.8]]
+    positive_overlap = compute_overlap_length(interval_list, positive_intervals)
+    negative_overlap = compute_overlap_length(interval_list, negative_intervals)
+    positive_no_overlap, negative_no_overlap = 0.6 - positive_overlap, 0.4 - negative_overlap
+    return 0.2 * positive_overlap + 0.1 * negative_no_overlap + 0.8 * positive_no_overlap + 0.9 * negative_overlap
+
+
+def compute_overlap_length(lst1, lst2):
+    i, j, overlap_length = 0, 0, 0
+    while i < len(lst1) and j < len(lst2):
+        left1, left2, right1, right2 = lst1[i][0], lst2[j][0], lst1[i][1], lst2[j][1]
+        low, high = max(left1, left2), min(right1, right2)
+        if low <= high:
+            overlap_length += high - low
+        i += right1 <= right2
+        j += right1 >= right2
+    return overlap_length
 
 #################################
 
