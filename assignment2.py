@@ -1,10 +1,10 @@
 #################################
 # Your name: Jonathan Yahav
 #################################
-
+import numpy
 import numpy as np
 import matplotlib.pyplot as plt
-import intervals
+import intervals as intv
 
 
 class Assignment2(object):
@@ -22,8 +22,8 @@ class Assignment2(object):
         """
         rng = np.random.default_rng()
         x_values = rng.uniform(0.0, 1.0, m)
-        y_values = np.array([generate_label(x) for x in x_values])
-        return np.vstack((x_values, y_values))
+        y_values = np.array([self.generate_label(x) for x in x_values])
+        return np.column_stack((x_values, y_values))
 
 
     def experiment_m_range_erm(self, m_first, m_last, step, k, T):
@@ -40,8 +40,17 @@ class Assignment2(object):
             A two dimensional array that contains the average empirical error
             and the average true error for each m in the range accordingly.
         """
-        # TODO: Implement the loop
-        pass
+        x_axis = np.arange(m_first, m_last + step, step) # TODO: + step?
+        empirical_errors, true_errors = np.array([]), np.array([])
+        for n in range(m_first, m_last + 1, step):
+            empirical_avg, true_avg = 0, 0
+            for i in range(T):
+                sample = self.sample_from_D(n)
+                intervals, besterror = intv.find_best_interval(sample[:, 0], sample[:, 1], k)
+                empirical_avg += self.compute_empirical_error(sample, intervals, besterror, k)
+                true_avg += self.compute_true_error(intervals) / T
+            numpy.append(empirical_errors, empirical_avg)
+            numpy.append(true_errors, true_avg)
 
     def experiment_k_range_erm(self, m, k_first, k_last, step):
         """Finds the best hypothesis for k= 1,2,...,10.
@@ -66,41 +75,51 @@ class Assignment2(object):
         # TODO: Implement me
         pass
 
-#################################
-# Place for additional methods
+    #################################
+    # Place for additional methods
 
+    def generate_label(self, x):
+        rng = np.random.default_rng()
+        random = rng.uniform(0.0, 1.0) # use a random number for probabilistic mapping
+        return int(random <= 0.8) if self.is_in_positive_interval(x) else int(random <= 0.1)
 
-def generate_label(x):
-    rng = np.random.default_rng()
-    random = rng.uniform(0.0, 1.0) # use a random number for probabilistic mapping
-    return int(random <= 0.8) if is_in_positive_interval(x) else int(random <= 0.1)
+    @staticmethod
+    def is_in_positive_interval(x):
+        positive_intervals = [0 <= x <= 0.2, 0.4 <= x <= 0.6, 0.8 <= x <= 1]
+        return any(positive_intervals)
 
+    def compute_empirical_error(self, sample, intervals, besterror, k):
+        pass
 
-def is_in_positive_interval(x):
-    positive_intervals = [0 <= x <= 0.2, 0.4 <= x <= 0.6, 0.8 <= x <= 1]
-    return any(positive_intervals)
+    def compute_true_error(self, interval_list):
+        positive_intervals = [[0, 0.2], [0.4, 0.6], [0.8, 1]]
+        negative_intervals = [[0.2, 0.4], [0.6, 0.8]]
+        positive_overlap = self.compute_overlap_length(interval_list, positive_intervals)
+        negative_overlap = self.compute_overlap_length(interval_list, negative_intervals)
+        positive_no_overlap, negative_no_overlap = 0.6 - positive_overlap, 0.4 - negative_overlap
+        return 0.2 * positive_overlap + 0.1 * negative_no_overlap + 0.8 * positive_no_overlap + 0.9 * negative_overlap
 
-def compute_true_error(interval_list):
-    positive_intervals = [[0, 0.2], [0.4, 0.6], [0.8, 1]]
-    negative_intervals = [[0.2, 0.4], [0.6, 0.8]]
-    positive_overlap = compute_overlap_length(interval_list, positive_intervals)
-    negative_overlap = compute_overlap_length(interval_list, negative_intervals)
-    positive_no_overlap, negative_no_overlap = 0.6 - positive_overlap, 0.4 - negative_overlap
-    return 0.2 * positive_overlap + 0.1 * negative_no_overlap + 0.8 * positive_no_overlap + 0.9 * negative_overlap
+    @staticmethod
+    def compute_overlap_length(lst1, lst2):
+        i, j, overlap_length = 0, 0, 0
+        while i < len(lst1) and j < len(lst2):
+            left1, left2, right1, right2 = lst1[i][0], lst2[j][0], lst1[i][1], lst2[j][1]
+            low, high = max(left1, left2), min(right1, right2)
+            if low <= high:
+                overlap_length += high - low
+            i += right1 <= right2
+            j += right1 >= right2
+        return overlap_length
 
+    @staticmethod
+    def graph(xData, yData, xLabel): # FIXME: adjust to relevant data
+        plt.xlabel(xLabel)
+        plt.ylabel("Prediction Accuracy (%)")
+        plt.title("Prediction Accuracy (%) as a Function of " + xLabel)
+        plt.plot(xData, yData, color="red")
+        plt.show()
 
-def compute_overlap_length(lst1, lst2):
-    i, j, overlap_length = 0, 0, 0
-    while i < len(lst1) and j < len(lst2):
-        left1, left2, right1, right2 = lst1[i][0], lst2[j][0], lst1[i][1], lst2[j][1]
-        low, high = max(left1, left2), min(right1, right2)
-        if low <= high:
-            overlap_length += high - low
-        i += right1 <= right2
-        j += right1 >= right2
-    return overlap_length
-
-#################################
+    #################################
 
 
 if __name__ == '__main__':
