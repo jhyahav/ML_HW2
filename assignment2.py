@@ -80,10 +80,9 @@ class Assignment2(object):
             empirical_errors.append(empirical_error)
             true_errors.append(self.compute_true_error(intervals))
         [empirical, true] = [np.array(empirical_errors), np.array(true_errors)]
-        title = "Average Error as a Function of k"
+        title = "Error as a Function of k"
         self.graph(title, x_axis, [empirical, true], "k", ["Empirical Error", "True Error"])
         return best_k
-
 
     def cross_validation(self, m):
         """Finds a k that gives a good test error.
@@ -91,8 +90,27 @@ class Assignment2(object):
 
         Returns: The best k value (an integer) found by the cross validation algorithm.
         """
-        # TODO: Implement me
-        pass
+        x_axis = np.arange(1, 11, 1)
+        empirical_errors = []
+        min_empirical_error, best_k, best_intervals = 2, -1, None
+        split_point = int(0.8 * m)
+        for k in range(1, 11):
+            sample = self.sample_from_D(m)
+            np.random.shuffle(sample)
+            training_set, holdout_set = sample[:split_point], sample[split_point:]
+            training_set = training_set[np.argsort(training_set[:, 0])]
+            intervals, training_error = intv.find_best_interval(training_set[:, 0], training_set[:, 1], k)
+            empirical_error = self.compute_empirical_error(intervals, holdout_set)
+            if empirical_error < min_empirical_error:
+                min_empirical_error = empirical_error
+                best_k = k
+                best_intervals = intervals
+            empirical_errors.append(empirical_error)
+        # print(best_intervals)
+        empirical = np.array(empirical_errors)
+        title = "Error as a Function of k with Holdout Validation"
+        self.graph(title, x_axis, [empirical], "k", ["Empirical Error"])
+        return best_k
 
     #################################
     # Place for additional methods
@@ -122,6 +140,13 @@ class Assignment2(object):
             i += right1 <= right2
             j += right1 >= right2
         return overlap_length
+
+    def compute_empirical_error(self, hypothesis_intervals, data):
+        mislabeled_count = 0
+        length = np.size(data, 0)
+        for i in range(length):
+            mislabeled_count += (self.is_in_interval(data[i, 0], hypothesis_intervals) != bool(data[i, 1]))
+        return mislabeled_count / length
 
     def is_in_positive_interval(self, x):
         return self.is_in_interval(x, self.positive_intervals)
